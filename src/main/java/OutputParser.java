@@ -12,15 +12,15 @@ public class OutputParser {
             "Matkalla valtatieltä",
             "Matkalla laturille",
             "Matkalla laturilta",
-            "Latautumassa",
             "Odottamassa",
+            "Latautumassa",
             "Valtatiellä (mediaani)",
             "Matkalla valtatielle (mediaani)",
             "Matkalla valtatieltä (mediaani)",
             "Matkalla laturille (mediaani)",
             "Matkalla laturilta (mediaani)",
-            "Latautumassa (mediaani)",
-            "Odottamassa (mediaani)"
+            "Odottamassa (mediaani)",
+            "Latautumassa (mediaani)"
     };
     private static final HashMap<Integer, HashMap<String, ArrayList<Double>>> data = new HashMap<>();
 
