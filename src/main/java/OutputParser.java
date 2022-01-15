@@ -33,6 +33,7 @@ public class OutputParser {
             if (file.getName().matches("r[0-9]+-c[0-9]+-statistics.csv"))
                 filesToBeParsed.add(file);
         }
+        listOfFiles = null;
         for (File file : filesToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
             int carCount = Integer.parseInt(content.get(0).split(";")[1]);
@@ -49,10 +50,10 @@ public class OutputParser {
             repeatData.get(columns[1]).add((double) totalTime);
 
             for (int i = 2; i < 9; i++) {
-                repeatData.get(columns[i]).add(Double.parseDouble(content.get(5).split(";")[1]));
+                repeatData.get(columns[i]).add(Double.parseDouble(content.get(i+3).split(";")[1]));
             }
             for (int i = 9; i < 16; i++) {
-                repeatData.get(columns[i]).add(Double.parseDouble(content.get(5).split(";")[3]));
+                repeatData.get(columns[i]).add(Double.parseDouble(content.get(i-4).split(";")[3]));
             }
         }
         StringBuilder s = new StringBuilder();
