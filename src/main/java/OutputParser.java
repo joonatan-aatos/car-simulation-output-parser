@@ -8,6 +8,8 @@ public class OutputParser {
             "Autot",
             "Keskihajonta",
             "Kulunut aika (s)",
+            "Lataustehon kerroin",
+            "Ajamisen tehokkuuden kerroin",
             "Ajamassa (keskiarvo)",
             "Odottamassa (keskiarvo)",
             "Latautumassa (keskiarvo)",
@@ -28,8 +30,12 @@ public class OutputParser {
     };
     private static final HashMap<String, HashMap<String, ArrayList<Double>>> data = new HashMap<>();
 
+    private static String getDataKey(int carCount, int standardDeviation, int chargingPowerCoefficient, int drivingEfficiencyCoefficient, boolean isWinter) {
+        return Integer.toString(carCount) + Integer.toString(standardDeviation) + Integer.toString(chargingPowerCoefficient) + Integer.toString(drivingEfficiencyCoefficient) + (isWinter ? "w" : "s");
+    }
+
     public static void main(String[] args) throws IOException {
-        File folder = new File("../sähköautosimulaatio/output/");
+        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
@@ -39,9 +45,9 @@ public class OutputParser {
 
         System.out.println("Getting files...");
         for (File file : listOfFiles) {
-            if (file.getName().matches("r[0-9]+-c[0-9]+-s[0-9]+-statistics.csv"))
+            if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-[ws]-statistics.csv$"))
                 statisticsToBeParsed.add(file);
-            else if (file.getName().matches("r[0-9]+-c[0-9]+-s[0-9]+-car_statistics.csv"))
+            else if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-[ws]-car_statistics.csv"))
                 carStatisticsToBeParsed.add(file);
         }
         final int filesToParseThrough = statisticsToBeParsed.size() + carStatisticsToBeParsed.size();
@@ -50,9 +56,13 @@ public class OutputParser {
         printState(0);
         for (File file : statisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            int carCount = Integer.parseInt(file.getName().replaceAll("r[0-9]+-c", "").replaceAll("-s[0-9]+-statistics.csv", ""));
-            int standardDeviation = Integer.parseInt(file.getName().replaceAll("r[0-9]+-c[0-9]+-s", "").replaceAll("-statistics.csv", ""));
-            String key = carCount+"-"+standardDeviation;
+            String[] nameData = file.getName().replaceAll("-statistics\\.csv", "").split("-[rcspe]*");
+            int carCount = Integer.parseInt(nameData[1]);
+            int standardDeviation = Integer.parseInt(nameData[2]);
+            int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
+            int drivingEfficiencyCoefficient = Integer.parseInt(nameData[4]);
+            boolean winter = nameData[5].equals("w");
+            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, winter);
             HashMap<String, ArrayList<Double>> repeatData = data.get(key);
             if (repeatData == null) {
                 repeatData = new HashMap<>();
@@ -65,17 +75,19 @@ public class OutputParser {
             int totalTime = Integer.parseInt(content.get(2).split(";")[1]);
             repeatData.get(columns[1]).add((double) standardDeviation);
             repeatData.get(columns[2]).add((double) totalTime);
+            repeatData.get(columns[3]).add((double) chargerPowerCoefficient);
+            repeatData.get(columns[4]).add((double) drivingEfficiencyCoefficient);
 
             double drivingSum = 0;
             for (int i = 2; i < 7; i++) {
                 drivingSum += Double.parseDouble(content.get(i+4).split(";")[1]);
             }
-            repeatData.get(columns[3]).add(drivingSum);
-            repeatData.get(columns[4]).add(Double.parseDouble(content.get(11).split(";")[1]));
-            repeatData.get(columns[5]).add(Double.parseDouble(content.get(12).split(";")[1]));
-            repeatData.get(columns[6]).add(Double.parseDouble(content.get(6).split(";")[3]));
-            repeatData.get(columns[7]).add(Double.parseDouble(content.get(11).split(";")[3]));
-            repeatData.get(columns[8]).add(Double.parseDouble(content.get(12).split(";")[3]));
+            repeatData.get(columns[5]).add(drivingSum);
+            repeatData.get(columns[6]).add(Double.parseDouble(content.get(11).split(";")[1]));
+            repeatData.get(columns[7]).add(Double.parseDouble(content.get(12).split(";")[1]));
+            repeatData.get(columns[8]).add(Double.parseDouble(content.get(6).split(";")[3]));
+            repeatData.get(columns[9]).add(Double.parseDouble(content.get(11).split(";")[3]));
+            repeatData.get(columns[10]).add(Double.parseDouble(content.get(12).split(";")[3]));
 
             double maxWaitingCOunt = 0;
             double[] maxWaitingCountOnRoads = new double[] { 0, 0, 0, 0, 0, 0 };
@@ -92,9 +104,9 @@ public class OutputParser {
                     }
                 }
             }
-            repeatData.get(columns[13]).add(maxWaitingCOunt);
+            repeatData.get(columns[15]).add(maxWaitingCOunt);
             for (int i = 0; i < 6; i++) {
-                repeatData.get(columns[14+i]).add(maxWaitingCountOnRoads[i]);
+                repeatData.get(columns[16+i]).add(maxWaitingCountOnRoads[i]);
             }
 
             printState(++filesParsed / (double) filesToParseThrough);
@@ -102,9 +114,13 @@ public class OutputParser {
 
         for (File file : carStatisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            int carCount = Integer.parseInt(file.getName().replaceAll("r[0-9]+-c", "").replaceAll("-s[0-9]+-car_statistics.csv", ""));
-            int standardDeviation = Integer.parseInt(file.getName().replaceAll("r[0-9]+-c[0-9]+-s", "").replaceAll("-car_statistics.csv", ""));
-            String key = carCount+"-"+standardDeviation;
+            String[] nameData = file.getName().replaceAll("-car_statistics\\.csv", "").split("-[rcspe]*");
+            int carCount = Integer.parseInt(nameData[1]);
+            int standardDeviation = Integer.parseInt(nameData[2]);
+            int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
+            int drivingEfficiencyCoefficient = Integer.parseInt(nameData[4]);
+            boolean winter = nameData[5].equals("w");
+            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, winter);
             HashMap<String, ArrayList<Double>> repeatData = data.get(key);
 
             double largestWaitingTime = 0;
@@ -120,9 +136,9 @@ public class OutputParser {
                     }
                 }
             }
-            repeatData.get(columns[9]).add(largestWaitingTime);
+            repeatData.get(columns[11]).add(largestWaitingTime);
             for (int i = 0; i < carsWaiting.length; i++) {
-                repeatData.get(columns[10+i]).add((double) carsWaiting[i]);
+                repeatData.get(columns[12+i]).add((double) carsWaiting[i]);
             }
             printState(++filesParsed / (double) filesToParseThrough);
         }
