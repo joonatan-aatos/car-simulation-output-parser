@@ -121,7 +121,7 @@ public class OutputParser {
 
         for (File file : carStatisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            String[] nameData = file.getName().replaceAll("-car_statistics\\.csv", "").split("((?!-s$)-[rcspe])|-");
+            String[] nameData = file.getName().replaceAll("-car_statistics\\.csv", "").split("((?!-s$)-[rcspea])|-");
             int carCount = Integer.parseInt(nameData[1]);
             int standardDeviation = Integer.parseInt(nameData[2]);
             int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
