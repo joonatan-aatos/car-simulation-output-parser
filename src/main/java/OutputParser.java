@@ -26,7 +26,11 @@ public class OutputParser {
             "Montako autoa jonotti suurimmillaan samanaikaisesti (Jy-Ou)",
             "Montako autoa jonotti suurimmillaan samanaikaisesti (Ou-Ke)",
             "Montako autoa jonotti suurimmillaan samanaikaisesti (Ke-Ro)",
-            "Montako autoa jonotti suurimmillaan samanaikaisesti (Ro-Ut)"
+            "Montako autoa jonotti suurimmillaan samanaikaisesti (Ro-Ut)",
+            "Kuinka monta autoa ajoi yli 200 km",
+            "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan",
+            "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan yli tunnin",
+            "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan yli 4 tuntia",
     };
     private static final HashMap<String, HashMap<String, ArrayList<Double>>> data = new HashMap<>();
 
@@ -35,7 +39,7 @@ public class OutputParser {
     }
 
     public static void main(String[] args) throws IOException {
-        File folder = new File("../Sim-tulokset-copy/");
+        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/ajo1/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
@@ -125,9 +129,12 @@ public class OutputParser {
 
             double largestWaitingTime = 0;
             int[] carsWaiting = new int[] { 0, 0, 0 };
-            double[] carsWaitingThresholds = new double[] { 0, 1, 4 };
+            int[] carsWithRouteOver200kmWaiting = new int[] { 0, 0, 0 };
+            double[] carsWaitingThresholds = new double[] { 0, 60, 240 };
+            int amountOfCarsWithRouteOver100km = 0;
             for (int i = 1; i < content.size()-1; i++) {
-                double waitingTime = Double.parseDouble(content.get(i).split(";")[7]);
+                String[] columns = content.get(i).split(";");
+                double waitingTime = Double.parseDouble(columns[7]);
                 if (waitingTime > largestWaitingTime)
                     largestWaitingTime = waitingTime;
                 for (int j = 0; j < carsWaitingThresholds.length; j++) {
@@ -135,11 +142,25 @@ public class OutputParser {
                         carsWaiting[j]++;
                     }
                 }
+                double routeLength = Double.parseDouble(columns[12]);
+                if (routeLength > 200) {
+                    amountOfCarsWithRouteOver100km++;
+                    for (int j = 0; j < carsWaitingThresholds.length; j++) {
+                        if (waitingTime > carsWaitingThresholds[j]) {
+                            carsWithRouteOver200kmWaiting[j]++;
+                        }
+                    }
+                }
             }
             repeatData.get(columns[11]).add(largestWaitingTime);
             for (int i = 0; i < carsWaiting.length; i++) {
                 repeatData.get(columns[12+i]).add((double) carsWaiting[i]);
             }
+            repeatData.get(columns[22]).add((double) amountOfCarsWithRouteOver100km);
+            for (int i = 0; i < carsWithRouteOver200kmWaiting.length; i++) {
+                repeatData.get(columns[23+i]).add((double) carsWithRouteOver200kmWaiting[i]);
+            }
+
             printState(++filesParsed / (double) filesToParseThrough);
         }
 
