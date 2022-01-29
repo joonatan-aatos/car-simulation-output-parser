@@ -40,7 +40,7 @@ public class OutputParser {
     }
 
     public static void main(String[] args) throws IOException {
-        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/ajo1/");
+        File folder = new File("../ajo3-tulokset/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
@@ -126,8 +126,9 @@ public class OutputParser {
             int standardDeviation = Integer.parseInt(nameData[2]);
             int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
             int drivingEfficiencyCoefficient = Integer.parseInt(nameData[4]);
-            boolean winter = nameData[5].equals("w");
-            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, winter);
+            int chargerCountCoefficient = Integer.parseInt(nameData[5]);
+            boolean winter = nameData[6].equals("w");
+            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, chargerCountCoefficient, winter);
             HashMap<String, ArrayList<Double>> repeatData = data.get(key);
 
             double largestWaitingTime = 0;
