@@ -10,6 +10,7 @@ public class OutputParser {
             "Kulunut aika (s)",
             "Lataustehon kerroin",
             "Ajamisen tehokkuuden kerroin",
+            "Latureiden lukumäärän kerroin",
             "Ajamassa (keskiarvo)",
             "Odottamassa (keskiarvo)",
             "Latautumassa (keskiarvo)",
@@ -34,8 +35,8 @@ public class OutputParser {
     };
     private static final HashMap<String, HashMap<String, ArrayList<Double>>> data = new HashMap<>();
 
-    private static String getDataKey(int carCount, int standardDeviation, int chargingPowerCoefficient, int drivingEfficiencyCoefficient, boolean isWinter) {
-        return Integer.toString(carCount) + Integer.toString(standardDeviation) + Integer.toString(chargingPowerCoefficient) + Integer.toString(drivingEfficiencyCoefficient) + (isWinter ? "w" : "s");
+    private static String getDataKey(int carCount, int standardDeviation, int chargingPowerCoefficient, int drivingEfficiencyCoefficient, int chargerCountCoefficient, boolean isWinter) {
+        return Integer.toString(carCount) + Integer.toString(standardDeviation) + Integer.toString(chargingPowerCoefficient) + Integer.toString(drivingEfficiencyCoefficient) + Integer.toString(chargerCountCoefficient) + (isWinter ? "w" : "s");
     }
 
     public static void main(String[] args) throws IOException {
@@ -60,13 +61,14 @@ public class OutputParser {
         printState(0);
         for (File file : statisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            String[] nameData = file.getName().replaceAll("-statistics\\.csv", "").split("((?!-s$)-[rcspe])|-");
+            String[] nameData = file.getName().replaceAll("-statistics\\.csv", "").split("((?!-s$)-[rcspea])|-");
             int carCount = Integer.parseInt(nameData[1]);
             int standardDeviation = Integer.parseInt(nameData[2]);
             int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
             int drivingEfficiencyCoefficient = Integer.parseInt(nameData[4]);
-            boolean winter = nameData[5].equals("w");
-            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, winter);
+            int chargerCountCoefficient = Integer.parseInt(nameData[5]);
+            boolean winter = nameData[6].equals("w");
+            String key = getDataKey(carCount, standardDeviation, chargerPowerCoefficient, drivingEfficiencyCoefficient, chargerCountCoefficient, winter);
             HashMap<String, ArrayList<Double>> repeatData = data.get(key);
             if (repeatData == null) {
                 repeatData = new HashMap<>();
@@ -81,17 +83,18 @@ public class OutputParser {
             repeatData.get(columns[2]).add((double) totalTime);
             repeatData.get(columns[3]).add((double) chargerPowerCoefficient);
             repeatData.get(columns[4]).add((double) drivingEfficiencyCoefficient);
+            repeatData.get(columns[5]).add((double) chargerCountCoefficient);
 
             double drivingSum = 0;
             for (int i = 2; i < 7; i++) {
                 drivingSum += Double.parseDouble(content.get(i+4).split(";")[1]);
             }
-            repeatData.get(columns[5]).add(drivingSum);
-            repeatData.get(columns[6]).add(Double.parseDouble(content.get(11).split(";")[1]));
-            repeatData.get(columns[7]).add(Double.parseDouble(content.get(12).split(";")[1]));
-            repeatData.get(columns[8]).add(Double.parseDouble(content.get(6).split(";")[3]));
-            repeatData.get(columns[9]).add(Double.parseDouble(content.get(11).split(";")[3]));
-            repeatData.get(columns[10]).add(Double.parseDouble(content.get(12).split(";")[3]));
+            repeatData.get(columns[6]).add(drivingSum);
+            repeatData.get(columns[7]).add(Double.parseDouble(content.get(11).split(";")[1]));
+            repeatData.get(columns[8]).add(Double.parseDouble(content.get(12).split(";")[1]));
+            repeatData.get(columns[9]).add(Double.parseDouble(content.get(6).split(";")[3]));
+            repeatData.get(columns[10]).add(Double.parseDouble(content.get(11).split(";")[3]));
+            repeatData.get(columns[11]).add(Double.parseDouble(content.get(12).split(";")[3]));
 
             double maxWaitingCOunt = 0;
             double[] maxWaitingCountOnRoads = new double[] { 0, 0, 0, 0, 0, 0 };
@@ -108,9 +111,9 @@ public class OutputParser {
                     }
                 }
             }
-            repeatData.get(columns[15]).add(maxWaitingCOunt);
+            repeatData.get(columns[16]).add(maxWaitingCOunt);
             for (int i = 0; i < 6; i++) {
-                repeatData.get(columns[16+i]).add(maxWaitingCountOnRoads[i]);
+                repeatData.get(columns[17+i]).add(maxWaitingCountOnRoads[i]);
             }
 
             printState(++filesParsed / (double) filesToParseThrough);
@@ -133,8 +136,8 @@ public class OutputParser {
             double[] carsWaitingThresholds = new double[] { 0, 60, 240 };
             int amountOfCarsWithRouteOver100km = 0;
             for (int i = 1; i < content.size()-1; i++) {
-                String[] columns = content.get(i).split(";");
-                double waitingTime = Double.parseDouble(columns[7]);
+                String[] row = content.get(i).split(";");
+                double waitingTime = Double.parseDouble(row[7]);
                 if (waitingTime > largestWaitingTime)
                     largestWaitingTime = waitingTime;
                 for (int j = 0; j < carsWaitingThresholds.length; j++) {
@@ -142,7 +145,7 @@ public class OutputParser {
                         carsWaiting[j]++;
                     }
                 }
-                double routeLength = Double.parseDouble(columns[12]);
+                double routeLength = Double.parseDouble(row[12]);
                 if (routeLength > 200) {
                     amountOfCarsWithRouteOver100km++;
                     for (int j = 0; j < carsWaitingThresholds.length; j++) {
@@ -152,13 +155,13 @@ public class OutputParser {
                     }
                 }
             }
-            repeatData.get(columns[11]).add(largestWaitingTime);
+            repeatData.get(columns[12]).add(largestWaitingTime);
             for (int i = 0; i < carsWaiting.length; i++) {
-                repeatData.get(columns[12+i]).add((double) carsWaiting[i]);
+                repeatData.get(columns[13+i]).add((double) carsWaiting[i]);
             }
-            repeatData.get(columns[22]).add((double) amountOfCarsWithRouteOver100km);
+            repeatData.get(columns[23]).add((double) amountOfCarsWithRouteOver100km);
             for (int i = 0; i < carsWithRouteOver200kmWaiting.length; i++) {
-                repeatData.get(columns[23+i]).add((double) carsWithRouteOver200kmWaiting[i]);
+                repeatData.get(columns[24+i]).add((double) carsWithRouteOver200kmWaiting[i]);
             }
 
             printState(++filesParsed / (double) filesToParseThrough);
