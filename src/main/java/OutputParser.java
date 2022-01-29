@@ -35,7 +35,7 @@ public class OutputParser {
     }
 
     public static void main(String[] args) throws IOException {
-        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/");
+        File folder = new File("../Sim-tulokset-copy/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
@@ -56,7 +56,7 @@ public class OutputParser {
         printState(0);
         for (File file : statisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            String[] nameData = file.getName().replaceAll("-statistics\\.csv", "").split("-[rcspe]*");
+            String[] nameData = file.getName().replaceAll("-statistics\\.csv", "").split("((?!-s$)-[rcspe])|-");
             int carCount = Integer.parseInt(nameData[1]);
             int standardDeviation = Integer.parseInt(nameData[2]);
             int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
@@ -114,7 +114,7 @@ public class OutputParser {
 
         for (File file : carStatisticsToBeParsed) {
             List<String> content = Files.readAllLines(file.toPath());
-            String[] nameData = file.getName().replaceAll("-car_statistics\\.csv", "").split("-[rcspe]*");
+            String[] nameData = file.getName().replaceAll("-car_statistics\\.csv", "").split("((?!-s$)-[rcspe])|-");
             int carCount = Integer.parseInt(nameData[1]);
             int standardDeviation = Integer.parseInt(nameData[2]);
             int chargerPowerCoefficient = Integer.parseInt(nameData[3]);
