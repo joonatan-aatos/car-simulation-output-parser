@@ -50,9 +50,9 @@ public class OutputParser {
 
         System.out.println("Getting files...");
         for (File file : listOfFiles) {
-            if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-[ws]-statistics.csv$"))
+            if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-a[0-9]+-[ws]-statistics.csv$"))
                 statisticsToBeParsed.add(file);
-            else if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-[ws]-car_statistics.csv"))
+            else if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-a[0-9]+-[ws]-car_statistics.csv"))
                 carStatisticsToBeParsed.add(file);
         }
         final int filesToParseThrough = statisticsToBeParsed.size() + carStatisticsToBeParsed.size();
