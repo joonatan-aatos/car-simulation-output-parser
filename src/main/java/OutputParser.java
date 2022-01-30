@@ -32,6 +32,10 @@ public class OutputParser {
             "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan",
             "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan yli tunnin",
             "Kuinka monta yli 200 km ajaneista autoista joutui odottamaan yli 4 tuntia",
+            "Kuinka monta autoa ajoi yli 400 km",
+            "Kuinka monta yli 400 km ajaneista autoista joutui odottamaan",
+            "Kuinka monta yli 400 km ajaneista autoista joutui odottamaan yli tunnin",
+            "Kuinka monta yli 400 km ajaneista autoista joutui odottamaan yli 4 tuntia",
     };
     private static final HashMap<String, HashMap<String, ArrayList<Double>>> data = new HashMap<>();
 
@@ -40,7 +44,7 @@ public class OutputParser {
     }
 
     public static void main(String[] args) throws IOException {
-        File folder = new File("../ajo3-tulokset/");
+        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/ajo1/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
@@ -134,8 +138,10 @@ public class OutputParser {
             double largestWaitingTime = 0;
             int[] carsWaiting = new int[] { 0, 0, 0 };
             int[] carsWithRouteOver200kmWaiting = new int[] { 0, 0, 0 };
+            int[] carsWithRouteOver400kmWaiting = new int[] { 0, 0, 0 };
             double[] carsWaitingThresholds = new double[] { 0, 60, 240 };
-            int amountOfCarsWithRouteOver100km = 0;
+            int amountOfCarsWithRouteOver200km = 0;
+            int amountOfCarsWithRouteOver400km = 0;
             for (int i = 1; i < content.size()-1; i++) {
                 String[] row = content.get(i).split(";");
                 double waitingTime = Double.parseDouble(row[7]);
@@ -148,10 +154,18 @@ public class OutputParser {
                 }
                 double routeLength = Double.parseDouble(row[12]);
                 if (routeLength > 200) {
-                    amountOfCarsWithRouteOver100km++;
+                    amountOfCarsWithRouteOver200km++;
                     for (int j = 0; j < carsWaitingThresholds.length; j++) {
                         if (waitingTime > carsWaitingThresholds[j]) {
                             carsWithRouteOver200kmWaiting[j]++;
+                        }
+                    }
+                }
+                if (routeLength > 400) {
+                    amountOfCarsWithRouteOver400km++;
+                    for (int j = 0; j < carsWaitingThresholds.length; j++) {
+                        if (waitingTime > carsWaitingThresholds[j]) {
+                            carsWithRouteOver400kmWaiting[j]++;
                         }
                     }
                 }
@@ -160,9 +174,13 @@ public class OutputParser {
             for (int i = 0; i < carsWaiting.length; i++) {
                 repeatData.get(columns[13+i]).add((double) carsWaiting[i]);
             }
-            repeatData.get(columns[23]).add((double) amountOfCarsWithRouteOver100km);
+            repeatData.get(columns[23]).add((double) amountOfCarsWithRouteOver200km);
             for (int i = 0; i < carsWithRouteOver200kmWaiting.length; i++) {
                 repeatData.get(columns[24+i]).add((double) carsWithRouteOver200kmWaiting[i]);
+            }
+            repeatData.get(columns[27]).add((double) amountOfCarsWithRouteOver400km);
+            for (int i = 0; i < carsWithRouteOver400kmWaiting.length; i++) {
+                repeatData.get(columns[28+i]).add((double) carsWithRouteOver400kmWaiting[i]);
             }
 
             printState(++filesParsed / (double) filesToParseThrough);
