@@ -44,10 +44,11 @@ public class OutputParser {
     }
 
     public static void main(String[] args) throws IOException {
-        File folder = new File("/home/joonatan/Documents/TuKoKe2021/tulokset/ajo1/");
+        File folder = new File("../saehkoeautosimulaatio/output/");
         File[] listOfFiles = folder.listFiles();
         ArrayList<File> statisticsToBeParsed = new ArrayList<>();
         ArrayList<File> carStatisticsToBeParsed = new ArrayList<>();
+        ArrayList<File> carModelStatisticsToBeParsed = new ArrayList<>();
         assert listOfFiles != null;
 
         long simulationStartTime = System.currentTimeMillis();
@@ -58,8 +59,10 @@ public class OutputParser {
                 statisticsToBeParsed.add(file);
             else if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-a[0-9]+-[ws]-car_statistics.csv"))
                 carStatisticsToBeParsed.add(file);
+            else if (file.getName().matches("^r[0-9]+-c[0-9]+-s[0-9]+-p[0-9]+-e[0-9]+-a[0-9]+-[ws]-car_model_statistics.csv"))
+                carModelStatisticsToBeParsed.add(file);
         }
-        final int filesToParseThrough = statisticsToBeParsed.size() + carStatisticsToBeParsed.size();
+        final int filesToParseThrough = statisticsToBeParsed.size() + carStatisticsToBeParsed.size() + carModelStatisticsToBeParsed.size();
         int filesParsed = 0;
         listOfFiles = null;
         printState(0);
@@ -206,11 +209,68 @@ public class OutputParser {
         printWriter.println(s.toString());
         printWriter.close();
 
+        PrintWriter carModelStats = new PrintWriter("carModelOutput.csv");
+        carModelStats.println(csvCarModelStatistics(filesParsed, filesToParseThrough, carModelStatisticsToBeParsed));
+        carModelStats.close();
+
         long simulationEndTime = System.currentTimeMillis();
 
         long totalTime = simulationEndTime - simulationStartTime;
 
+
         System.out.printf("\nParsed %d files in %d minutes and %d seconds.\n", filesToParseThrough, (int) ((totalTime / (1000*60)) % 60), (int) (totalTime / 1000) % 60);
+    }
+
+    private static String csvCarModelStatistics(int filesParsed, int filesToParseThrough, ArrayList<File> carModelStatisticsToBeParsed) throws IOException {
+        StringBuilder s = new StringBuilder();
+        HashMap<String, double[]> carModelDataSums = new HashMap<>();
+        for (File file : carModelStatisticsToBeParsed) {
+            List<String> content = Files.readAllLines(file.toPath());
+            for (int i = 1; i < content.size(); i++) {
+                String[] values = content.get(i).split(";");
+                if (values.length < 2) break;
+                String carModel = values[0];
+                if (Double.parseDouble(values[1])<=0) continue;
+                if (carModelDataSums.containsKey(carModel)) {
+                    carModelDataSums.get(carModel)[0]++;
+                    carModelDataSums.get(carModel)[1] += Double.parseDouble(values[1]);
+                    carModelDataSums.get(carModel)[2] += Double.parseDouble(values[2]);
+                    carModelDataSums.get(carModel)[3] += Double.parseDouble(values[3]);
+                    carModelDataSums.get(carModel)[4] += Double.parseDouble(values[4]);
+                    carModelDataSums.get(carModel)[5] += Double.parseDouble(values[5]);
+                    carModelDataSums.get(carModel)[6] += Double.parseDouble(values[6])/Double.parseDouble(values[9]);
+                    carModelDataSums.get(carModel)[7] += Double.parseDouble(values[7])/Double.parseDouble(values[9]);
+                    carModelDataSums.get(carModel)[8] += Double.parseDouble(values[8])/Double.parseDouble(values[9]);
+                    carModelDataSums.get(carModel)[9] += Double.parseDouble(values[9]);
+                    carModelDataSums.get(carModel)[10] += Double.parseDouble(values[10]);
+                } else {
+                    double[] list = new double[11];
+                    list[0] = 1;
+                    list[1] = Double.parseDouble(values[1]);
+                    list[2] = Double.parseDouble(values[2]);
+                    list[3] = Double.parseDouble(values[3]);
+                    list[4] = Double.parseDouble(values[4]);
+                    list[5] = Double.parseDouble(values[5]);
+                    list[6] = Double.parseDouble(values[6])/Double.parseDouble(values[9]);
+                    list[7] = Double.parseDouble(values[7])/Double.parseDouble(values[9]);
+                    list[8] = Double.parseDouble(values[8])/Double.parseDouble(values[9]);
+                    list[9] = Double.parseDouble(values[9]);
+                    list[10] = Double.parseDouble(values[10]);
+                    carModelDataSums.put(carModel, list);
+                }
+            }
+            printState(++filesParsed / (double) filesToParseThrough);
+        }
+        s.append("Malli;Määrä;Akun koko (kWh);Max AC teho (kW);Max DC teho (kW);Ajotehokkuus (kWh/100km);Aika odottamassa (%);Aika valtatiellä (%);Aika laturilla (%);Kokonaisaika (min/auto);Latauskertojen määrä (Latauksien määrä/ 100km)\n");
+        for (String key : carModelDataSums.keySet()) {
+            s.append(key);
+            double[] list = carModelDataSums.get(key);
+            for (int i = 1; i < list.length; i++) {
+                s.append(";"+list[i]/list[0]);
+            }
+            s.append("\n");
+        }
+        return s.toString();
     }
 
     private static void printState(double progress) {
